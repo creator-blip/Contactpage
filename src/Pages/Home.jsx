@@ -100,7 +100,7 @@ const Home = () => {
     .ticker-content {
       display: flex;
        gap: 2rem;
-      animation: smoothScroll 5s linear infinite;
+      animation: smoothScroll 10s linear infinite;
       max-width: max-content;
     }
     .ticker-item {
