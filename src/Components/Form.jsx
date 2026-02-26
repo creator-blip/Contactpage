@@ -187,7 +187,7 @@ export default function VisaForm() {
                     {formData.visaType === 'student' && (
                         <div className="animate-fadeIn">
                             <label className="block mb-2 text-gray-700 font-medium font-manrope text-sm">Which course are you interested in?*</label>
-                            <select name="targetCourse" value={formData.targetCourse} onChange={handleChange} required className="w-full px-4 py-3 rounded-lg border font-manrope border-gray-400 bg-transparent cursor-pointer">
+                            <select name="targetCourse" value={formData.targetCourse} onChange={handleChange} required className="w-full px-4 py-3 rounded-lg border mb-6 font-manrope border-gray-400 bg-transparent cursor-pointer">
                                 <option value="">Select Degree Type</option>
                                 <option value="bachelor">Bachelor's</option>
                                 <option value="master">Master's</option>
