@@ -196,7 +196,7 @@ export default function VisaForm() {
                     )}
                 </div>
 
-                <button type="submit" className="w-full py-4 opacity-80 bg-gradient-to-tl from-[#1D318A] to-[#428699] hover:from-[#4e5da1] hover:to-[#72a5b3] text-white font-semibold rounded-lg text-base transition-all duration-200 font-manrope transform hover:-translate-y-0.5 hover:shadow-lg">
+                <button type="submit" className="w-full py-4 bg-gradient-to-tl from-[#1D318A] to-[#428699] hover:from-[#4e5da1] hover:to-[#72a5b3] text-white font-semibold rounded-lg text-base transition-all duration-200 font-manrope transform hover:-translate-y-0.5 hover:shadow-lg">
                     Continue
                 </button>
             </form>
