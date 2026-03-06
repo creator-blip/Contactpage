@@ -275,7 +275,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gradient-to-tl from-[#DBF0FF] via-[#FFFFFF] to-[#ede6fd] font-sans text-slate-800">
       <style>{tickerStyle}</style>
-      <div className="max-w-8xl mx-auto px-4 py-8 md:px-12  sm:py-10 lg:px-24  xl:px-24  2xl:px-32  flex flex-col lg:flex-row gap-12 xl:gap-16 2xl:gap-20 items-start">
+      <div className="max-w-8xl mx-auto px-4 py-8 md:px-12  sm:py-10 lg:px-24  xl:px-12  2xl:px-32  flex flex-col lg:flex-row gap-12 xl:gap-16 2xl:gap-20 items-start">
 
         {/* Left Column: Content */}
         <div className="lg:w-1/2 space-y-5 xl:space-y-6 2xl:space-y-6 w-full">
