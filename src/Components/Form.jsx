@@ -71,7 +71,7 @@ export default function VisaForm() {
     }
 
     return (
-        <div className="bg-transparent p-1 sm:p-10 lg:p-12 xl:p-14 2xl:p-0 rounded-2xl max-w-4xl mx-auto my-5  animate-fadeIn">
+        <div className="bg-transparent p-1 sm:p-10 lg:p-12 xl:p-2 2xl:p-0 rounded-2xl max-w-4xl mx-auto my-5  animate-fadeIn">
             <h3 className="text-2xl font-manrope font-semibold text-gray-800 mb-6 text-left">
                 Book 1:1 Free Counselling Session
             </h3>

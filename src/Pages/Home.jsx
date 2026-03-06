@@ -215,7 +215,7 @@ const Home = () => {
   `;
 
   const FormComponent = () => (
-    <div className="w-full bg-transparent rounded-3xl sm:m-6 md:p-8 lg:p-12 xl:p-14 2xl:p-16 animate-slideInRight">
+    <div className="w-full bg-transparent rounded-3xl sm:m-6 md:p-8 lg:p-2 xl:p-4 2xl:p-2 animate-slideInRight">
       <div className="ticker-wrapper mb-2 sm:mb-3 lg:mb-4">
         <div className="ticker-content ">
           {countries.concat(countries).map((country, idx) => (
