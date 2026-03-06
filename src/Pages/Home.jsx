@@ -509,8 +509,8 @@ const StatCard = ({ value, label, color }) => {
 
   return (
     <div className={`p-4 xl:p-5 2xl:p-4 rounded-lg flex flex-col justify-between h-22 ${color} transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-default`}>
-      <span className="text-2xl xl:text-2xl 2xl:text-2xl mb-3 font-bold transition-all duration-300">{displayValue}</span>
-      <span className="text-md xl:text-lg 2xl:text-lg font-manrope leading-tight font-semibold opacity-90">{label}</span>
+      <span className="text-2xl xl:text-xl 2xl:text-2xl mb-3 font-bold transition-all duration-300">{displayValue}</span>
+      <span className="text-md xl:text-md 2xl:text-lg font-manrope leading-tight font-semibold opacity-90">{label}</span>
     </div>
   );
 };
