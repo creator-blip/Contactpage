@@ -1,16 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Thankyou from './Thankyou';
 
-const Otp = ({ phone, formData, onBack }) => {
+const Otp = ({ phone, formData, sentOtp, onBack, onResend }) => {
   const [otp, setOtp] = useState('');
   const [isVerified, setIsVerified] = useState(false);
+  const [error, setError] = useState('');
+  const [resendCountdown, setResendCountdown] = useState(30);
+  const [isResending, setIsResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
+
+  useEffect(() => {
+    if (resendCountdown > 0) {
+      const timer = setTimeout(() => setResendCountdown(resendCountdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCountdown]);
 
   const handleVerify = (e) => {
     e.preventDefault();
-    console.log("Verifying OTP:", otp);
-    // Add your verification logic here
-    // For now, we'll just show the thank you page
-    setIsVerified(true);
+    setError('');
+    
+    // Validate OTP
+    if (otp.trim() === sentOtp.trim()) {
+      console.log("OTP Verified Successfully");
+      setIsVerified(true);
+    } else {
+      setError('Invalid OTP. Please try again.');
+      console.log("OTP Verification Failed. Entered:", otp, "Expected:", sentOtp);
+    }
+  };
+
+  const handleResendClick = async () => {
+    if (resendCountdown > 0 || isResending) return;
+    
+    setIsResending(true);
+    setError('');
+    setResendSuccess(false);
+    
+    const success = await onResend();
+    
+    if (success) {
+      setResendCountdown(30);
+      setResendSuccess(true);
+      setOtp('');
+      setTimeout(() => setResendSuccess(false), 3000);
+    } else {
+      setError('Failed to resend OTP. Please try again.');
+    }
+    
+    setIsResending(false);
   };
 
   const handleBackHome = () => {
@@ -50,20 +88,43 @@ const Otp = ({ phone, formData, onBack }) => {
               id="otp"
               maxLength="4"
               value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+              onChange={(e) => {
+                setOtp(e.target.value.replace(/\D/g, ''));
+                setError('');
+              }}
               placeholder="Enter 4-digit OTP"
-              className="w-full px-4 py-4 bg-transparent border border-gray-400 rounded-lg outline-none transition-all focus:border-cyan-600 focus:bg-white text-slate-700 font-medium text-center text-lg tracking-widest"
+              className={`w-full px-4 py-4 bg-transparent border rounded-lg outline-none transition-all focus:bg-white text-slate-700 font-medium text-center text-lg tracking-widest ${
+                error ? 'border-red-500 focus:border-red-600' : 'border-gray-400 focus:border-cyan-600'
+              }`}
               required
             />
+            {error && (
+              <p className="text-red-500 text-sm mt-2 text-center font-medium">{error}</p>
+            )}
           </div>
+
+          {resendSuccess && (
+            <div className="flex items-center justify-center gap-2 text-sm font-medium text-green-600 bg-green-50 py-2 px-4 rounded-lg">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <span>OTP sent successfully!</span>
+            </div>
+          )}
 
           <div className="flex items-center gap-1 text-sm font-medium">
             <span className="text-slate-600">Didn't get the code?</span>
             <button 
-              type="button" 
-              className="text-cyan-700 hover:text-cyan-600 transition-colors font-semibold"
+              type="button"
+              onClick={handleResendClick}
+              disabled={resendCountdown > 0 || isResending}
+              className={`font-semibold transition-colors ${
+                resendCountdown > 0 || isResending
+                  ? 'text-slate-400 cursor-not-allowed'
+                  : 'text-cyan-700 hover:text-cyan-600'
+              }`}
             >
-              Resend OTP
+              {isResending ? 'Sending...' : resendCountdown > 0 ? `Resend in ${resendCountdown}s` : 'Resend OTP'}
             </button>
           </div>
 

@@ -2,9 +2,9 @@ import React from 'react';
 
 export default function Navbar() {
   return (
-    <header className="w-full bg-white border-b border-gray-200">
+    <header className="w-full h-20 bg-white border-b border-gray-200">
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-24">
-        <div className="flex items-center justify-between h-16 sm:h-20">
+        <div className="flex items-center mt-2 justify-between h-16 sm:h-20">
           {/* Logo Section */}
           <div className="flex items-center space-x-2">
             <div className="relative">
