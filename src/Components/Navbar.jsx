@@ -1,6 +1,8 @@
 import React from 'react';
 
 export default function Navbar() {
+  const imageBase = `${process.env.PUBLIC_URL}/images`;
+
   return (
     <header className="w-full h-20 bg-white border-b border-gray-200">
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-24">
@@ -9,7 +11,7 @@ export default function Navbar() {
           <div className="flex items-center space-x-2">
             <div className="relative">
               {/* Logo Icon - Stylized 'A' */}
-              <img src="./images/AAV-Logo-Black.png" alt="AAV Logo" className='h-10 sm:h-14' />
+              <img src={`${imageBase}/AAV-Logo-Black.png`} alt="AAV Logo" className='h-10 sm:h-14' />
             </div>
           </div>
 
@@ -20,7 +22,7 @@ export default function Navbar() {
               <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full">
                 <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
                   <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden">
-                    <img src="./images/india.jpg" alt="India Flag" className='w-7 h-7 sm:w-8 sm:h-8' />
+                    <img src={`${imageBase}/india.jpg`} alt="India Flag" className='w-7 h-7 sm:w-8 sm:h-8' />
                   </div>
                 </div>
               </div>
@@ -42,7 +44,7 @@ export default function Navbar() {
               <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full">
                 <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
                   <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden">
-                    <img src="./images/uae.webp" alt="uae Flag" className='w-7 h-7 sm:w-8 sm:h-8' />
+                    <img src={`${imageBase}/uae.webp`} alt="uae Flag" className='w-7 h-7 sm:w-8 sm:h-8' />
                   </div>
                 </div>
               </div>

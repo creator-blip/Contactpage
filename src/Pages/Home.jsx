@@ -392,7 +392,7 @@ const Home = () => {
               {/* mobile Google Reviews */}
               <div className="flex flex-col items-center cursor-default flex-1">
                 <div className="flex items-baseline gap-1">
-                  <img src="./images/Google-rating-ico.webp" alt="google ratings" className='h-16' />
+                  <img src={`${process.env.PUBLIC_URL}/images/Google-rating-ico.webp`} alt="google ratings" className='h-16' />
                 </div>
               </div>
 
@@ -438,7 +438,7 @@ const Home = () => {
               {/* Desktop Google Reviews */}
               <div className="flex flex-col items-center cursor-default">
                 <div className="flex items-baseline gap-1 mb-1">
-                  <img src="./images/Google-rating-ico.webp" alt="google ratings" className='h-20' />
+                  <img src={`${process.env.PUBLIC_URL}/images/Google-rating-ico.webp`} alt="google ratings" className='h-20' />
                 </div>
               </div>
 
