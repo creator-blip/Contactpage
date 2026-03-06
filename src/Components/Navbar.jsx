@@ -19,8 +19,8 @@ export default function Navbar() {
             <div className="flex items-center space-x-2 sm:space-x-3">
               <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full">
                 <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden">
-                    <img src="./images/india.jpg" alt="India Flag" className='w-8 h-8 sm:w-10 sm:h-10' />
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden">
+                    <img src="./images/india.jpg" alt="India Flag" className='w-7 h-7 sm:w-8 sm:h-8' />
                   </div>
                 </div>
               </div>
@@ -41,8 +41,8 @@ export default function Navbar() {
             <div className="flex items-center space-x-2 sm:space-x-3">
               <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full">
                 <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden">
-                    <img src="./images/uae.webp" alt="uae Flag" className='w-8 h-8 sm:w-10 sm:h-10' />
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden">
+                    <img src="./images/uae.webp" alt="uae Flag" className='w-7 h-7 sm:w-8 sm:h-8' />
                   </div>
                 </div>
               </div>
