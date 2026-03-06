@@ -275,7 +275,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gradient-to-tl from-[#DBF0FF] via-[#FFFFFF] to-[#ede6fd] font-sans text-slate-800">
       <style>{tickerStyle}</style>
-      <div className="max-w-8xl mx-auto px-4 py-8 md:px-12  sm:py-10 lg:px-24  xl:px-32  2xl:px-40  flex flex-col lg:flex-row gap-12 xl:gap-16 2xl:gap-20 items-start">
+      <div className="max-w-8xl mx-auto px-4 py-8 md:px-12  sm:py-10 lg:px-24  xl:px-24  2xl:px-32  flex flex-col lg:flex-row gap-12 xl:gap-16 2xl:gap-20 items-start">
 
         {/* Left Column: Content */}
         <div className="lg:w-1/2 space-y-5 xl:space-y-6 2xl:space-y-6 w-full">
@@ -508,7 +508,7 @@ const StatCard = ({ value, label, color }) => {
   }, [value]);
 
   return (
-    <div className={`p-4 xl:p-5 2xl:p-4 rounded-lg flex flex-col justify-between h-22 ${color} transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-default`}>
+    <div className={`p-2 xl:p-3 2xl:p-4 rounded-lg flex flex-col justify-between h-24 lg:h-32 ${color} transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-default`}>
       <span className="text-2xl xl:text-xl 2xl:text-2xl mb-3 font-bold transition-all duration-300">{displayValue}</span>
       <span className="text-md xl:text-md 2xl:text-lg font-manrope leading-tight font-semibold opacity-90">{label}</span>
     </div>
