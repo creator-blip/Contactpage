@@ -420,7 +420,7 @@ export default function VisaForm() {
                                 value={formData.targetCountry}
                                 onChange={handleChange}
                                 required
-                                className="w-full px-4 py-3 mb-7 font-manrope rounded-lg border border-gray-400 bg-transparent cursor-pointer"
+                                className="w-full px-4 py-3 font-manrope rounded-lg border border-gray-400 bg-transparent cursor-pointer"
                             >
                                 <option value="">Select Target Country</option>
                                 <option value="germany">Germany</option>
