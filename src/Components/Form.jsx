@@ -120,6 +120,16 @@ export default function VisaForm() {
         return params.get('utm_medium') || 'website'
     }
 
+    const getCountryNameByIso = (isoCode) => {
+        const selectedCountry = countries.find((country) => country.isoCode === isoCode)
+        return selectedCountry ? selectedCountry.name : isoCode
+    }
+
+    const getStateNameByIso = (isoCode) => {
+        const selectedState = states.find((state) => state.isoCode === isoCode)
+        return selectedState ? selectedState.name : isoCode
+    }
+
     const getPhoneParts = (fullPhone, dialCode) => {
         const digitsOnly = fullPhone.replace(/\D/g, '')
         const dialCodeDigits = (dialCode || '+91').replace(/\D/g, '')
@@ -151,8 +161,8 @@ export default function VisaForm() {
             birth_day: formData.birthDay,
             birth_month: formData.birthMonth,
             birth_year: formData.birthYear,
-            current_country: formData.country,
-            state: formData.state,
+            current_country: getCountryNameByIso(formData.country),
+            state: getStateNameByIso(formData.state),
             city: formData.city,
             visa_type: formData.visaType,
             target_country: formData.targetCountry,
