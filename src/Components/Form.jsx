@@ -4,10 +4,29 @@ import { PhoneInput } from 'react-international-phone'
 import 'react-international-phone/style.css'
 import Otp from './Otp'
 
+// Fix #4: Moved outside component to avoid recreation on every render
+const countryMap = {
+    germany: '1',
+    uk: '2',
+    canada: '3',
+    usa: '4',
+    australia: '5',
+    newzealand: '6'
+}
+
+const days = Array.from({ length: 31 }, (_, i) => i + 1)
+const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+]
+const currentYear = new Date().getFullYear()
+const years = Array.from({ length: 100 }, (_, i) => currentYear - i)
+
 export default function VisaForm() {
     const [showOtp, setShowOtp] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [sentOtp, setSentOtp] = useState('')
+    const [phoneError, setPhoneError] = useState('') // Fix #2: phone validation state
 
     const [formData, setFormData] = useState({
         firstName: '',
@@ -29,49 +48,55 @@ export default function VisaForm() {
     const [states, setStates] = useState([])
     const [cities, setCities] = useState([])
 
-    const days = Array.from({ length: 31 }, (_, i) => i + 1)
-    const months = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
-    ]
-    const currentYear = new Date().getFullYear()
-    const years = Array.from({ length: 100 }, (_, i) => currentYear - i)
-
-    const countryMap = {
-        germany: '1',
-        uk: '2',
-        canada: '3',
-        usa: '4',
-        australia: '5',
-        newzealand: '6'
-    }
-
     useEffect(() => {
         setCountries(Country.getAllCountries())
     }, [])
 
+    // Fix #1: Separated state/city resets to avoid stale closure warnings
     useEffect(() => {
         if (formData.country) {
             setStates(State.getStatesOfCountry(formData.country))
             setCities([])
-            setFormData(prev => ({ ...prev, state: '', city: '' }))
         }
     }, [formData.country])
 
     useEffect(() => {
         if (formData.country && formData.state) {
             setCities(City.getCitiesOfState(formData.country, formData.state))
-            setFormData(prev => ({ ...prev, city: '' }))
         }
     }, [formData.country, formData.state])
 
     const handleChange = (e) => {
         const { name, value } = e.target
+
+        // Reset dependent fields when parent changes
+        if (name === 'country') {
+            setFormData(prev => ({ ...prev, country: value, state: '', city: '' }))
+            return
+        }
+        if (name === 'state') {
+            setFormData(prev => ({ ...prev, state: value, city: '' }))
+            return
+        }
+
         setFormData(prev => ({ ...prev, [name]: value }))
     }
 
     const handlePhoneChange = (phone) => {
         setFormData(prev => ({ ...prev, phone }))
+        // Clear phone error when user types
+        if (phoneError) setPhoneError('')
+    }
+
+    // Fix #2: Manual phone validation function
+    const validatePhone = () => {
+        const cleaned = formData.phone.replace(/\D/g, '')
+        if (!formData.phone || cleaned.length < 7) {
+            setPhoneError('Please enter a valid phone number')
+            return false
+        }
+        setPhoneError('')
+        return true
     }
 
     const getUtmMedium = () => {
@@ -109,7 +134,6 @@ export default function VisaForm() {
             country1: countryMap[formData.targetCountry] || '',
             coaching1: formData.visaType === 'coaching' ? 'IELTS' : '',
             utm_medium: getUtmMedium(),
-
             birth_day: formData.birthDay,
             birth_month: formData.birthMonth,
             birth_year: formData.birthYear,
@@ -140,31 +164,28 @@ export default function VisaForm() {
                 throw new Error('Failed to submit lead')
             }
         } catch (error) {
-            // CRM blocks CORS from some domains. In that case, continue OTP flow
-            // with a fallback code so the user is not stuck on submit.
-            if (error instanceof TypeError) {
-                console.warn('CRM response blocked by browser (likely CORS). Continuing with fallback OTP.')
+            // Fix #5: More explicit CORS warning — only bypass on network-level TypeError
+            if (error instanceof TypeError && error.message.includes('fetch')) {
+                console.warn('CRM blocked by CORS policy. Using fallback OTP for development only.')
+                // NOTE: In production, fix CORS on your server instead of relying on this fallback.
                 return Math.floor(1000 + Math.random() * 9000).toString()
             }
-
             throw error
         }
 
-        // Extract OTP from response (try parsing JSON first)
+        // Extract OTP from response
         let otpValue = ''
         try {
             const jsonResult = JSON.parse(result)
             otpValue = jsonResult.otp || jsonResult.OTP || jsonResult.code || ''
         } catch {
-            // If response is not JSON, try to extract OTP from text
             const otpMatch = result.match(/\b\d{4}\b/)
             otpValue = otpMatch ? otpMatch[0] : ''
         }
 
-        // If no OTP found in response, generate a random 4-digit OTP
         if (!otpValue) {
             otpValue = Math.floor(1000 + Math.random() * 9000).toString()
-            console.log('Generated OTP:', otpValue)
+            console.log('Generated fallback OTP:', otpValue)
         }
 
         return otpValue
@@ -172,6 +193,10 @@ export default function VisaForm() {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
+
+        // Fix #2: Validate phone before submitting
+        if (!validatePhone()) return
+
         setIsSubmitting(true)
 
         try {
@@ -198,10 +223,19 @@ export default function VisaForm() {
     }
 
     if (showOtp) {
-        return <Otp phone={formData.phone} formData={formData} sentOtp={sentOtp} onBack={() => setShowOtp(false)} onResend={handleResendOtp} />
+        return (
+            <Otp
+                phone={formData.phone}
+                formData={formData}
+                sentOtp={sentOtp}
+                onBack={() => setShowOtp(false)}
+                onResend={handleResendOtp}
+            />
+        )
     }
 
     return (
+        // Fix #3: Removed <style jsx> (Next.js only). Styles moved to plain <style> tag below.
         <div className="bg-transparent p-1 sm:p-10 lg:p-12 xl:p-2 2xl:p-0 rounded-2xl max-w-4xl mx-auto my-5 animate-fadeIn">
             <h3 className="text-2xl font-manrope font-semibold text-gray-800 mb-6 text-left">
                 Book 1:1 Free Counselling Session
@@ -260,12 +294,11 @@ export default function VisaForm() {
                         <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">
                             WhatsApp Number*
                         </label>
-                        <div className="flex w-full px-4 py-1.5 bg-transparent rounded-lg border border-gray-400 focus-within:border-indigo-500 transition-colors">
+                        <div className={`flex w-full px-4 py-1.5 bg-transparent rounded-lg border transition-colors ${phoneError ? 'border-red-500' : 'border-gray-400 focus-within:border-indigo-500'}`}>
                             <PhoneInput
                                 defaultCountry="in"
                                 value={formData.phone}
                                 onChange={handlePhoneChange}
-                                required
                                 className="phone-input-custom w-full"
                                 inputClassName="!border-none !w-full !text-base !bg-transparent focus:!ring-0"
                                 countrySelectorStyleProps={{
@@ -273,6 +306,10 @@ export default function VisaForm() {
                                 }}
                             />
                         </div>
+                        {/* Fix #2: Show phone validation error */}
+                        {phoneError && (
+                            <p className="text-red-500 text-xs mt-1">{phoneError}</p>
+                        )}
                     </div>
                 </div>
 
@@ -462,8 +499,9 @@ export default function VisaForm() {
                 </button>
             </form>
 
-            <style jsx>{`
-                :global(.react-international-phone-input-container) {
+            {/* Fix #3: Replaced <style jsx> with plain <style> tag — works in all React setups */}
+            <style>{`
+                .react-international-phone-input-container {
                     border: none !important;
                 }
                 @keyframes fadeIn {
