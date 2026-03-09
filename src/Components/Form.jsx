@@ -27,6 +27,7 @@ export default function VisaForm() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [sentOtp, setSentOtp] = useState('')
     const [phoneError, setPhoneError] = useState('') // Fix #2: phone validation state
+    const [phoneDialCode, setPhoneDialCode] = useState('+91')
 
     const [formData, setFormData] = useState({
         firstName: '',
@@ -82,8 +83,14 @@ export default function VisaForm() {
         setFormData(prev => ({ ...prev, [name]: value }))
     }
 
-    const handlePhoneChange = (phone) => {
+    const handlePhoneChange = (phone, country) => {
         setFormData(prev => ({ ...prev, phone }))
+
+        // Use library country metadata to keep dial code accurate.
+        if (country?.dialCode) {
+            setPhoneDialCode(`+${country.dialCode}`)
+        }
+
         // Clear phone error when user types
         if (phoneError) setPhoneError('')
     }
@@ -104,25 +111,23 @@ export default function VisaForm() {
         return params.get('utm_medium') || 'website'
     }
 
-    const getPhoneParts = (fullPhone) => {
-        const cleaned = fullPhone.replace(/\s+/g, '')
-        const match = cleaned.match(/^(\+\d{1,4})(\d+)$/)
+    const getPhoneParts = (fullPhone, dialCode) => {
+        const digitsOnly = fullPhone.replace(/\D/g, '')
+        const dialCodeDigits = (dialCode || '+91').replace(/\D/g, '')
 
-        if (match) {
-            return {
-                mobile_no_code: match[1],
-                mobile_no: match[2]
-            }
+        let mobileNo = digitsOnly
+        if (dialCodeDigits && digitsOnly.startsWith(dialCodeDigits)) {
+            mobileNo = digitsOnly.slice(dialCodeDigits.length)
         }
 
         return {
-            mobile_no_code: '+91',
-            mobile_no: cleaned.replace(/\D/g, '')
+            mobile_no_code: dialCode || '+91',
+            mobile_no: mobileNo
         }
     }
 
     const sendOtpRequest = async () => {
-        const { mobile_no_code, mobile_no } = getPhoneParts(formData.phone)
+        const { mobile_no_code, mobile_no } = getPhoneParts(formData.phone, phoneDialCode)
 
         const payload = {
             first_name: formData.firstName,
