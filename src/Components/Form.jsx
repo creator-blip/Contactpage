@@ -485,7 +485,7 @@ export default function VisaForm() {
                                 className="w-full px-4 py-3 font-manrope rounded-lg border border-gray-400 bg-transparent cursor-pointer"
                             >
                                 <option value="">Select Target Country</option>
-                                <optgroup label="Popular Destinations">
+                                <optgroup label="">
                                     <option value="germany">Germany</option>
                                     <option value="uk">United Kingdom</option>
                                     <option value="canada">Canada</option>
