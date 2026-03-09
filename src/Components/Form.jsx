@@ -4,14 +4,21 @@ import { PhoneInput } from 'react-international-phone'
 import 'react-international-phone/style.css'
 import Otp from './Otp'
 
-// Fix #4: Moved outside component to avoid recreation on every render
+// Moved outside component to avoid recreation on every render
 const countryMap = {
     germany: '1',
     uk: '2',
     canada: '3',
     usa: '4',
     australia: '5',
-    newzealand: '6'
+    newzealand: '6',
+    // Fix #2: Added Gulf countries
+    saudiarabia: '7',
+    uae: '8',
+    kuwait: '9',
+    qatar: '10',
+    bahrain: '11',
+    oman: '12'
 }
 
 const visaPurposeMap = {
@@ -35,7 +42,7 @@ export default function VisaForm() {
     const [showOtp, setShowOtp] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [sentOtp, setSentOtp] = useState('')
-    const [phoneError, setPhoneError] = useState('') // Fix #2: phone validation state
+    const [phoneError, setPhoneError] = useState('')
     const [phoneDialCode, setPhoneDialCode] = useState('+91')
 
     const [formData, setFormData] = useState({
@@ -62,7 +69,6 @@ export default function VisaForm() {
         setCountries(Country.getAllCountries())
     }, [])
 
-    // Fix #1: Separated state/city resets to avoid stale closure warnings
     useEffect(() => {
         if (formData.country) {
             setStates(State.getStatesOfCountry(formData.country))
@@ -79,7 +85,6 @@ export default function VisaForm() {
     const handleChange = (e) => {
         const { name, value } = e.target
 
-        // Reset dependent fields when parent changes
         if (name === 'country') {
             setFormData(prev => ({ ...prev, country: value, state: '', city: '' }))
             return
@@ -92,19 +97,17 @@ export default function VisaForm() {
         setFormData(prev => ({ ...prev, [name]: value }))
     }
 
-    const handlePhoneChange = (phone, country) => {
+    // Fix #1: Correct signature — react-international-phone passes (phone, meta)
+    const handlePhoneChange = (phone, meta) => {
         setFormData(prev => ({ ...prev, phone }))
 
-        // Use library country metadata to keep dial code accurate.
-        if (country?.dialCode) {
-            setPhoneDialCode(`+${country.dialCode}`)
+        if (meta?.country?.dialCode) {
+            setPhoneDialCode(`+${meta.country.dialCode}`)
         }
 
-        // Clear phone error when user types
         if (phoneError) setPhoneError('')
     }
 
-    // Fix #2: Manual phone validation function
     const validatePhone = () => {
         const cleaned = formData.phone.replace(/\D/g, '')
         if (!formData.phone || cleaned.length < 7) {
@@ -121,13 +124,14 @@ export default function VisaForm() {
     }
 
     const getCountryNameByIso = (isoCode) => {
-        const selectedCountry = countries.find((country) => country.isoCode === isoCode)
-        return selectedCountry ? selectedCountry.name : isoCode
+        const found = countries.find((c) => c.isoCode === isoCode)
+        return found ? found.name : ''
     }
 
+    // Fix #4: Return empty string instead of raw ISO code as fallback
     const getStateNameByIso = (isoCode) => {
-        const selectedState = states.find((state) => state.isoCode === isoCode)
-        return selectedState ? selectedState.name : isoCode
+        const found = states.find((s) => s.isoCode === isoCode)
+        return found ? found.name : ''
     }
 
     const getPhoneParts = (fullPhone, dialCode) => {
@@ -154,7 +158,8 @@ export default function VisaForm() {
             email_id: formData.email,
             mobile_no: mobile_no,
             mobile_no_code: mobile_no_code,
-            purpose: visaPurposeMap[formData.visaType] || 'Study Abroad',
+            // Fix #5: Always send 'Study Abroad' as purpose to match CRM expectation
+            purpose: 'Study Abroad',
             country1: countryMap[formData.targetCountry] || '',
             coaching1: formData.visaType === 'coaching' ? 'IELTS' : '',
             utm_medium: getUtmMedium(),
@@ -164,10 +169,12 @@ export default function VisaForm() {
             current_country: getCountryNameByIso(formData.country),
             state: getStateNameByIso(formData.state),
             city: formData.city,
-            visa_type: formData.visaType,
+            visa_type: visaPurposeMap[formData.visaType] || formData.visaType,
             target_country: formData.targetCountry,
             target_course: formData.targetCourse
         }
+
+        console.log('Sending payload:', payload)
 
         const body = new URLSearchParams(payload).toString()
         let result = ''
@@ -188,16 +195,13 @@ export default function VisaForm() {
                 throw new Error('Failed to submit lead')
             }
         } catch (error) {
-            // Fix #5: More explicit CORS warning — only bypass on network-level TypeError
             if (error instanceof TypeError && error.message.includes('fetch')) {
-                console.warn('CRM blocked by CORS policy. Using fallback OTP for development only.')
-                // NOTE: In production, fix CORS on your server instead of relying on this fallback.
+                console.warn('CRM blocked by CORS policy. Using fallback OTP.')
                 return Math.floor(1000 + Math.random() * 9000).toString()
             }
             throw error
         }
 
-        // Extract OTP from response
         let otpValue = ''
         try {
             const jsonResult = JSON.parse(result)
@@ -218,7 +222,6 @@ export default function VisaForm() {
     const handleSubmit = async (e) => {
         e.preventDefault()
 
-        // Fix #2: Validate phone before submitting
         if (!validatePhone()) return
 
         setIsSubmitting(true)
@@ -259,13 +262,14 @@ export default function VisaForm() {
     }
 
     return (
-        // Fix #3: Removed <style jsx> (Next.js only). Styles moved to plain <style> tag below.
         <div className="bg-transparent p-1 sm:p-10 lg:p-12 xl:p-2 2xl:p-0 rounded-2xl max-w-4xl mx-auto my-5 animate-fadeIn">
             <h3 className="text-2xl font-manrope font-semibold text-gray-800 mb-6 text-left">
                 Book 1:1 Free Counselling Session
             </h3>
 
             <form onSubmit={handleSubmit}>
+
+                {/* First Name & Last Name */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                     <div>
                         <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">
@@ -298,6 +302,7 @@ export default function VisaForm() {
                     </div>
                 </div>
 
+                {/* Email & Phone */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                     <div>
                         <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">
@@ -330,13 +335,13 @@ export default function VisaForm() {
                                 }}
                             />
                         </div>
-                        {/* Fix #2: Show phone validation error */}
                         {phoneError && (
                             <p className="text-red-500 text-xs mt-1">{phoneError}</p>
                         )}
                     </div>
                 </div>
 
+                {/* Date of Birth */}
                 <div className="mb-5">
                     <label className="block mb-2 text-gray-700 font-manrope font-medium text-sm">
                         Date of Birth*
@@ -383,6 +388,7 @@ export default function VisaForm() {
                     </div>
                 </div>
 
+                {/* Country / State / City */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
                     <div>
                         <label className="block mb-2 text-gray-700 font-manrope font-medium text-sm">
@@ -449,6 +455,7 @@ export default function VisaForm() {
                     )}
                 </div>
 
+                {/* Visa Type */}
                 <div className="mb-5">
                     <label className="block mb-2 text-gray-700 font-manrope font-medium text-sm">
                         What type of visa service are you seeking?*
@@ -471,7 +478,8 @@ export default function VisaForm() {
                 </div>
 
                 <div className="space-y-5">
-                    {['student', 'visitor', 'dependent', 'work', 'studyPermit'].includes(formData.visaType) && (
+                    {/* Fix #3: Added 'coaching' so target country shows for coaching visa type */}
+                    {['student', 'visitor', 'dependent', 'work', 'studyPermit', 'coaching'].includes(formData.visaType) && (
                         <div className="animate-fadeIn">
                             <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">
                                 Which country are you inquiring about?*
@@ -484,12 +492,23 @@ export default function VisaForm() {
                                 className="w-full px-4 py-3 font-manrope rounded-lg border border-gray-400 bg-transparent cursor-pointer"
                             >
                                 <option value="">Select Target Country</option>
-                                <option value="germany">Germany</option>
-                                <option value="uk">United Kingdom</option>
-                                <option value="canada">Canada</option>
-                                <option value="usa">United States</option>
-                                <option value="australia">Australia</option>
-                                <option value="newzealand">New Zealand</option>
+                                <optgroup label="Popular Destinations">
+                                    <option value="germany">Germany</option>
+                                    <option value="uk">United Kingdom</option>
+                                    <option value="canada">Canada</option>
+                                    <option value="usa">United States</option>
+                                    <option value="australia">Australia</option>
+                                    <option value="newzealand">New Zealand</option>
+                                </optgroup>
+                                {/* Fix #2: Gulf countries added */}
+                                <optgroup label="Gulf Countries">
+                                    <option value="saudiarabia">Saudi Arabia</option>
+                                    <option value="uae">United Arab Emirates</option>
+                                    <option value="kuwait">Kuwait</option>
+                                    <option value="qatar">Qatar</option>
+                                    <option value="bahrain">Bahrain</option>
+                                    <option value="oman">Oman</option>
+                                </optgroup>
                             </select>
                         </div>
                     )}
@@ -523,7 +542,6 @@ export default function VisaForm() {
                 </button>
             </form>
 
-            {/* Fix #3: Replaced <style jsx> with plain <style> tag — works in all React setups */}
             <style>{`
                 .react-international-phone-input-container {
                     border: none !important;
