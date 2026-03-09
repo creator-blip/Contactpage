@@ -113,7 +113,7 @@ export default function VisaForm() {
 
     const getUtmMedium = () => {
         const params = new URLSearchParams(window.location.search)
-        return params.get('utm_medium') || 'website'
+        return params.get('utm_medium') || ''
     }
 
     const getCountryNameByIso = (isoCode) => {
