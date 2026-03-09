@@ -14,6 +14,15 @@ const countryMap = {
     newzealand: '6'
 }
 
+const visaPurposeMap = {
+    student: 'Student Visa',
+    visitor: 'Visitor Visa',
+    coaching: 'Coaching',
+    dependent: 'Dependent Visa',
+    work: 'Work Visa',
+    studyPermit: 'Study Permit / Only Visa'
+}
+
 const days = Array.from({ length: 31 }, (_, i) => i + 1)
 const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -135,7 +144,7 @@ export default function VisaForm() {
             email_id: formData.email,
             mobile_no: mobile_no,
             mobile_no_code: mobile_no_code,
-            purpose: formData.visaType || 'Study Abroad',
+            purpose: visaPurposeMap[formData.visaType] || 'Study Abroad',
             country1: countryMap[formData.targetCountry] || '',
             coaching1: formData.visaType === 'coaching' ? 'IELTS' : '',
             utm_medium: getUtmMedium(),
