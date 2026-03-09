@@ -11,14 +11,7 @@ const countryMap = {
     canada: '3',
     usa: '4',
     australia: '5',
-    newzealand: '6',
-    // Fix #2: Added Gulf countries
-    saudiarabia: '7',
-    uae: '8',
-    kuwait: '9',
-    qatar: '10',
-    bahrain: '11',
-    oman: '12'
+    newzealand: '6'
 }
 
 const visaPurposeMap = {
@@ -499,15 +492,6 @@ export default function VisaForm() {
                                     <option value="usa">United States</option>
                                     <option value="australia">Australia</option>
                                     <option value="newzealand">New Zealand</option>
-                                </optgroup>
-                                {/* Fix #2: Gulf countries added */}
-                                <optgroup label="Gulf Countries">
-                                    <option value="saudiarabia">Saudi Arabia</option>
-                                    <option value="uae">United Arab Emirates</option>
-                                    <option value="kuwait">Kuwait</option>
-                                    <option value="qatar">Qatar</option>
-                                    <option value="bahrain">Bahrain</option>
-                                    <option value="oman">Oman</option>
                                 </optgroup>
                             </select>
                         </div>
