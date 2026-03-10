@@ -34,7 +34,7 @@ export default function VisaForm() {
     const [showOtp, setShowOtp] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [sentOtp, setSentOtp] = useState('')
-    const [masterId, setMasterId] = useState('') // ✅ Store master_id from CRM response
+    const [masterId, setMasterId] = useState('')
     const [phoneError, setPhoneError] = useState('')
     const [phoneDialCode, setPhoneDialCode] = useState('+91')
 
@@ -108,7 +108,7 @@ export default function VisaForm() {
 
     const getUtmMedium = () => {
         const params = new URLSearchParams(window.location.search)
-        return params.get('utm_medium') || ''
+        return params.get('utm_medium') || 'direct'
     }
 
     const getCountryNameByIso = (isoCode) => {
@@ -180,7 +180,6 @@ export default function VisaForm() {
             throw error
         }
 
-        // ✅ Extract both OTP and master_id from CRM response
         let otpValue = ''
         let masterIdValue = ''
         try {
@@ -202,7 +201,6 @@ export default function VisaForm() {
     const verifyOtpRequest = async (enteredOtp, currentSentOtp, currentMasterId) => {
         const { mobile_no_code, mobile_no } = getPhoneParts(formData.phone, phoneDialCode)
 
-        // ✅ FIX: Send master_id which otp-check-api.php requires
         const payload = {
             master_id: currentMasterId,
             otp: enteredOtp,
@@ -244,9 +242,7 @@ export default function VisaForm() {
                     isValid === 1
                 )
 
-                if (isSuccess) {
-                    return { success: true, message: '' }
-                }
+                if (isSuccess) return { success: true, message: '' }
 
                 return { success: false, message: message || 'Invalid OTP. Please try again.' }
             } catch {
@@ -273,15 +269,20 @@ export default function VisaForm() {
         }
     }
 
+    // ✅ FIX: e.preventDefault() is now the VERY FIRST line — before any other code runs
+    // ✅ FIX: Also added e.stopPropagation() to prevent any parent form from catching this event
     const handleSubmit = async (e) => {
         e.preventDefault()
+        e.stopPropagation()
+
         if (!validatePhone()) return
+
         setIsSubmitting(true)
 
         try {
             const { otp, masterId: newMasterId } = await sendOtpRequest()
             setSentOtp(otp)
-            setMasterId(newMasterId) // ✅ Save master_id for OTP verification
+            setMasterId(newMasterId)
             setShowOtp(true)
         } catch (error) {
             console.error('Submission Error:', error)
@@ -308,7 +309,7 @@ export default function VisaForm() {
                 phone={formData.phone}
                 formData={formData}
                 sentOtp={sentOtp}
-                masterId={masterId} // ✅ Pass master_id to Otp component
+                masterId={masterId}
                 onBack={() => setShowOtp(false)}
                 onResend={handleResendOtp}
                 onVerify={verifyOtpRequest}
@@ -322,7 +323,9 @@ export default function VisaForm() {
                 Book 1:1 Free Counselling Session
             </h3>
 
-            <form onSubmit={handleSubmit}>
+            {/* ✅ FIX: onSubmit is on the form, button is type="submit" — correct setup */}
+            <form onSubmit={handleSubmit} noValidate>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                     <div>
                         <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">First Name*</label>
@@ -434,7 +437,11 @@ export default function VisaForm() {
                     )}
                 </div>
 
-                <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-gradient-to-tl from-[#1D318A] to-[#428699] hover:from-[#4e5da1] hover:to-[#72a5b3] text-white opacity-80 font-semibold rounded-lg text-base transition-all duration-200 font-manrope transform hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full py-4 bg-gradient-to-tl from-[#1D318A] to-[#428699] hover:from-[#4e5da1] hover:to-[#72a5b3] text-white opacity-80 font-semibold rounded-lg text-base transition-all duration-200 font-manrope transform hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                     {isSubmitting ? 'Submitting...' : 'Continue'}
                 </button>
             </form>
