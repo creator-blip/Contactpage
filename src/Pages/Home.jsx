@@ -214,7 +214,7 @@ const Home = () => {
     }
   `;
 
-  const FormComponent = () => (
+  const formContent = (
     <div className="w-full bg-transparent rounded-3xl sm:m-6 md:p-8 lg:p-2 xl:p-4 2xl:p-2 animate-slideInRight">
       <div className="ticker-wrapper mb-2 sm:mb-3 lg:mb-4">
         <div className="ticker-content ">
@@ -334,7 +334,7 @@ const Home = () => {
 
           {/* Mobile/Tablet Form - After benefits */}
           <div className="block lg:hidden opacity-0 animate-fadeIn animation-delay-500">
-            <FormComponent />
+            {formContent}
           </div>          
           <p className="text-lg xl:text-lg font-semibold p-2 tracking-normal font-manrope text-slate-700 leading-relaxed opacity-0 animate-fadeInUp animation-delay-300">
             Clear, honest advice to help you choose the right visa, avoid costly mistakes, and move forward with confidence.
