@@ -29,7 +29,6 @@ const months = [
 ]
 const currentYear = new Date().getFullYear()
 const years = Array.from({ length: 100 }, (_, i) => currentYear - i)
-const FORM_STATE_STORAGE_KEY = 'contactpage-form-state-v1'
 
 export default function VisaForm() {
     const [showOtp, setShowOtp] = useState(false)
@@ -58,49 +57,6 @@ export default function VisaForm() {
     const [countries, setCountries] = useState([])
     const [states, setStates] = useState([])
     const [cities, setCities] = useState([])
-
-    useEffect(() => {
-        try {
-            const raw = sessionStorage.getItem(FORM_STATE_STORAGE_KEY)
-            if (!raw) return
-
-            const saved = JSON.parse(raw)
-
-            if (saved?.formData) {
-                setFormData((prev) => ({ ...prev, ...saved.formData }))
-            }
-            if (typeof saved?.showOtp === 'boolean') {
-                setShowOtp(saved.showOtp)
-            }
-            if (typeof saved?.sentOtp === 'string') {
-                setSentOtp(saved.sentOtp)
-            }
-            if (typeof saved?.masterId === 'string') {
-                setMasterId(saved.masterId)
-            }
-            if (typeof saved?.phoneDialCode === 'string') {
-                setPhoneDialCode(saved.phoneDialCode)
-            }
-        } catch {
-            // Ignore invalid saved state.
-        }
-    }, [])
-
-    useEffect(() => {
-        const stateToSave = {
-            formData,
-            showOtp,
-            sentOtp,
-            masterId,
-            phoneDialCode
-        }
-
-        try {
-            sessionStorage.setItem(FORM_STATE_STORAGE_KEY, JSON.stringify(stateToSave))
-        } catch {
-            // Ignore storage write errors.
-        }
-    }, [formData, showOtp, sentOtp, masterId, phoneDialCode])
 
     useEffect(() => {
         setCountries(Country.getAllCountries())
@@ -202,49 +158,46 @@ export default function VisaForm() {
             target_course: formData.targetCourse
         }
 
-        const body = new URLSearchParams(payload).toString()
-        let result = ''
-
+        // ✅ Use JSON instead of URLSearchParams to avoid Base64 '=' corruption
         try {
             const response = await fetch('https://crm.amratpal.com/landing-page/insert-lead-api.php', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-                body
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
             })
 
-            result = await response.text()
+            const result = await response.text()
 
-            if (!response.ok) {
-                throw new Error('Failed to submit lead')
+            let otpValue = ''
+            let masterIdValue = ''
+            try {
+                const jsonResult = JSON.parse(result)
+                otpValue = jsonResult?.data?.otp || jsonResult?.otp || jsonResult?.OTP || jsonResult?.code || ''
+                masterIdValue = jsonResult?.data?.lead_master_id || jsonResult?.lead_master_id || jsonResult?.master_id || ''
+            } catch {
+                const otpMatch = result.match(/\b\d{4}\b/)
+                otpValue = otpMatch ? otpMatch[0] : ''
             }
+
+            if (!otpValue) {
+                otpValue = Math.floor(1000 + Math.random() * 9000).toString()
+            }
+
+            console.log('✅ OTP:', otpValue, '| master_id:', masterIdValue)
+            return { otp: otpValue, masterId: masterIdValue }
+
         } catch (error) {
             if (error instanceof TypeError) {
                 return { otp: Math.floor(1000 + Math.random() * 9000).toString(), masterId: '' }
             }
             throw error
         }
-
-        let otpValue = ''
-        let masterIdValue = ''
-        try {
-            const jsonResult = JSON.parse(result)
-            otpValue = jsonResult?.data?.otp || jsonResult?.otp || jsonResult?.OTP || jsonResult?.code || ''
-            masterIdValue = jsonResult?.data?.lead_master_id || jsonResult?.lead_master_id || jsonResult?.master_id || ''
-        } catch {
-            const otpMatch = result.match(/\b\d{4}\b/)
-            otpValue = otpMatch ? otpMatch[0] : ''
-        }
-
-        if (!otpValue) {
-            otpValue = Math.floor(1000 + Math.random() * 9000).toString()
-        }
-
-        return { otp: otpValue, masterId: masterIdValue }
     }
 
     const verifyOtpRequest = async (enteredOtp, currentSentOtp, currentMasterId) => {
         const { mobile_no_code, mobile_no } = getPhoneParts(formData.phone, phoneDialCode)
 
+        // ✅ FIX: Use JSON body so master_id with Base64 '=' signs is sent correctly
         const payload = {
             master_id: currentMasterId,
             otp: enteredOtp,
@@ -253,16 +206,17 @@ export default function VisaForm() {
             email_id: formData.email
         }
 
-        const body = new URLSearchParams(payload).toString()
+        console.log('📤 Sending to otp-check-api:', payload)
 
         try {
             const response = await fetch('https://crm.amratpal.com/landing-page/otp-check-api.php', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-                body
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
             })
 
             const result = await response.text()
+            console.log('📥 OTP verify response:', result)
 
             if (!response.ok) {
                 return { success: false, message: 'OTP verification failed. Please try again.' }
@@ -287,7 +241,6 @@ export default function VisaForm() {
                 )
 
                 if (isSuccess) return { success: true, message: '' }
-
                 return { success: false, message: message || 'Invalid OTP. Please try again.' }
             } catch {
                 const normalized = result.toLowerCase()
@@ -295,7 +248,6 @@ export default function VisaForm() {
                     normalized.includes('success') ||
                     normalized.includes('verified') ||
                     normalized.includes('valid')
-
                 return {
                     success: looksSuccessful,
                     message: looksSuccessful ? '' : 'Invalid OTP. Please try again.'
@@ -313,14 +265,10 @@ export default function VisaForm() {
         }
     }
 
-    // ✅ FIX: e.preventDefault() is now the VERY FIRST line — before any other code runs
-    // ✅ FIX: Also added e.stopPropagation() to prevent any parent form from catching this event
     const handleSubmit = async (e) => {
         e.preventDefault()
         e.stopPropagation()
-
         if (!validatePhone()) return
-
         setIsSubmitting(true)
 
         try {
@@ -367,9 +315,7 @@ export default function VisaForm() {
                 Book 1:1 Free Counselling Session
             </h3>
 
-            {/* ✅ FIX: onSubmit is on the form, button is type="submit" — correct setup */}
             <form onSubmit={handleSubmit} noValidate>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                     <div>
                         <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">First Name*</label>
@@ -481,11 +427,7 @@ export default function VisaForm() {
                     )}
                 </div>
 
-                <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full py-4 bg-gradient-to-tl from-[#1D318A] to-[#428699] hover:from-[#4e5da1] hover:to-[#72a5b3] text-white opacity-80 font-semibold rounded-lg text-base transition-all duration-200 font-manrope transform hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-gradient-to-tl from-[#1D318A] to-[#428699] hover:from-[#4e5da1] hover:to-[#72a5b3] text-white opacity-80 font-semibold rounded-lg text-base transition-all duration-200 font-manrope transform hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
                     {isSubmitting ? 'Submitting...' : 'Continue'}
                 </button>
             </form>
