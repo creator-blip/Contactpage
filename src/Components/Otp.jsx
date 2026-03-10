@@ -30,7 +30,8 @@ const Otp = ({ phone, formData, sentOtp, onBack, onResend, onVerify }) => {
 
     try {
       if (onVerify) {
-        const verificationResult = await onVerify(otp.trim());
+        // ✅ OTP BUG FIX: Pass sentOtp as second argument to avoid stale closure
+        const verificationResult = await onVerify(otp.trim(), sentOtp);
         if (verificationResult?.success) {
           setIsVerified(true);
         } else {
@@ -50,13 +51,13 @@ const Otp = ({ phone, formData, sentOtp, onBack, onResend, onVerify }) => {
 
   const handleResendClick = async () => {
     if (resendCountdown > 0 || isResending) return;
-    
+
     setIsResending(true);
     setError('');
     setResendSuccess(false);
-    
+
     const success = await onResend();
-    
+
     if (success) {
       setResendCountdown(30);
       setResendSuccess(true);
@@ -65,7 +66,7 @@ const Otp = ({ phone, formData, sentOtp, onBack, onResend, onVerify }) => {
     } else {
       setError('Failed to resend OTP. Please try again.');
     }
-    
+
     setIsResending(false);
   };
 
@@ -81,8 +82,9 @@ const Otp = ({ phone, formData, sentOtp, onBack, onResend, onVerify }) => {
   }
 
   return (
-    <div className="bg-transparent p-10 rounded-2xl max-w-5xl mx-auto my-5  animate-fadeIn">
+    <div className="bg-transparent p-10 rounded-2xl max-w-5xl mx-auto my-5 animate-fadeIn">
       <div className="max-w-md mx-auto">
+
         {/* Header Section */}
         <div className="space-y-3 mb-8">
           <h2 className="text-2xl font-manrope font-semibold text-gray-800 text-left">
@@ -132,7 +134,7 @@ const Otp = ({ phone, formData, sentOtp, onBack, onResend, onVerify }) => {
 
           <div className="flex items-center gap-1 text-sm font-medium">
             <span className="text-slate-600">Didn't get the code?</span>
-            <button 
+            <button
               type="button"
               onClick={handleResendClick}
               disabled={resendCountdown > 0 || isResending}
@@ -166,7 +168,8 @@ const Otp = ({ phone, formData, sentOtp, onBack, onResend, onVerify }) => {
         </form>
       </div>
 
-      <style jsx>{`
+      {/* ✅ FIX: Replaced <style jsx> with plain <style> — works in all React setups */}
+      <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: scale(0.95); }
           to { opacity: 1; transform: scale(1); }

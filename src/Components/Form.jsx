@@ -202,7 +202,8 @@ export default function VisaForm() {
         return otpValue
     }
 
-    const verifyOtpRequest = async (enteredOtp) => {
+    // ✅ OTP BUG FIX: Accept currentSentOtp as parameter instead of reading sentOtp from outer scope
+    const verifyOtpRequest = async (enteredOtp, currentSentOtp) => {
         const { mobile_no_code, mobile_no } = getPhoneParts(formData.phone, phoneDialCode)
 
         const payload = {
@@ -269,7 +270,8 @@ export default function VisaForm() {
             }
         } catch (error) {
             if (error instanceof TypeError) {
-                const fallbackSuccess = enteredOtp.trim() === sentOtp.trim()
+                // ✅ OTP BUG FIX: Use currentSentOtp parameter instead of stale sentOtp from closure
+                const fallbackSuccess = enteredOtp.trim() === currentSentOtp.trim()
                 return {
                     success: fallbackSuccess,
                     message: fallbackSuccess ? '' : 'Invalid OTP. Please try again.'
