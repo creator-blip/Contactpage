@@ -186,10 +186,16 @@ export default function VisaForm() {
             throw error
         }
 
+        // ✅ FIX 1: CRM returns OTP inside data.otp not directly in jsonResult.otp
         let otpValue = ''
         try {
             const jsonResult = JSON.parse(result)
-            otpValue = jsonResult.otp || jsonResult.OTP || jsonResult.code || ''
+            otpValue =
+                jsonResult?.data?.otp ||   // ← CRM actual response structure
+                jsonResult?.otp ||
+                jsonResult?.OTP ||
+                jsonResult?.code ||
+                ''
         } catch {
             const otpMatch = result.match(/\b\d{4}\b/)
             otpValue = otpMatch ? otpMatch[0] : ''
@@ -202,15 +208,16 @@ export default function VisaForm() {
         return otpValue
     }
 
-    // ✅ OTP BUG FIX: Accept currentSentOtp as parameter instead of reading sentOtp from outer scope
     const verifyOtpRequest = async (enteredOtp, currentSentOtp) => {
         const { mobile_no_code, mobile_no } = getPhoneParts(formData.phone, phoneDialCode)
 
+        // ✅ FIX 2: Added 'name' field — otp-check-api.php requires it (was causing UNPROCESSABLE_ENTITY)
         const payload = {
             mobile_no: mobile_no,
             mobile_no_code: mobile_no_code,
             otp: enteredOtp,
-            email_id: formData.email
+            email_id: formData.email,
+            name: `${formData.firstName} ${formData.lastName}`.trim()
         }
 
         const body = new URLSearchParams(payload).toString()
@@ -270,7 +277,6 @@ export default function VisaForm() {
             }
         } catch (error) {
             if (error instanceof TypeError) {
-                // ✅ OTP BUG FIX: Use currentSentOtp parameter instead of stale sentOtp from closure
                 const fallbackSuccess = enteredOtp.trim() === currentSentOtp.trim()
                 return {
                     success: fallbackSuccess,
@@ -332,12 +338,9 @@ export default function VisaForm() {
 
             <form onSubmit={handleSubmit}>
 
-                {/* First Name & Last Name */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                     <div>
-                        <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">
-                            First Name*
-                        </label>
+                        <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">First Name*</label>
                         <input
                             type="text"
                             name="firstName"
@@ -348,11 +351,8 @@ export default function VisaForm() {
                             className="w-full px-4 py-3 bg-transparent rounded-lg border border-gray-400 focus:outline-none focus:border-indigo-500 transition-colors"
                         />
                     </div>
-
                     <div>
-                        <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">
-                            Last Name*
-                        </label>
+                        <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">Last Name*</label>
                         <input
                             type="text"
                             name="lastName"
@@ -365,12 +365,9 @@ export default function VisaForm() {
                     </div>
                 </div>
 
-                {/* Email & Phone */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                     <div>
-                        <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">
-                            Email*
-                        </label>
+                        <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">Email*</label>
                         <input
                             type="email"
                             name="email"
@@ -381,11 +378,8 @@ export default function VisaForm() {
                             className="w-full px-4 py-3 bg-transparent rounded-lg border border-gray-400 focus:outline-none focus:border-indigo-500 transition-colors"
                         />
                     </div>
-
                     <div>
-                        <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">
-                            WhatsApp Number*
-                        </label>
+                        <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">WhatsApp Number*</label>
                         <div className={`flex w-full px-4 py-1.5 bg-transparent rounded-lg border transition-colors ${phoneError ? 'border-red-500' : 'border-gray-400 focus-within:border-indigo-500'}`}>
                             <PhoneInput
                                 defaultCountry="in"
@@ -393,143 +387,62 @@ export default function VisaForm() {
                                 onChange={handlePhoneChange}
                                 className="phone-input-custom w-full"
                                 inputClassName="!border-none !w-full !text-base !bg-transparent focus:!ring-0"
-                                countrySelectorStyleProps={{
-                                    buttonClassName: '!border-none !bg-transparent'
-                                }}
+                                countrySelectorStyleProps={{ buttonClassName: '!border-none !bg-transparent' }}
                             />
                         </div>
-                        {phoneError && (
-                            <p className="text-red-500 text-xs mt-1">{phoneError}</p>
-                        )}
+                        {phoneError && <p className="text-red-500 text-xs mt-1">{phoneError}</p>}
                     </div>
                 </div>
 
-                {/* Date of Birth */}
                 <div className="mb-5">
-                    <label className="block mb-2 text-gray-700 font-manrope font-medium text-sm">
-                        Date of Birth*
-                    </label>
+                    <label className="block mb-2 text-gray-700 font-manrope font-medium text-sm">Date of Birth*</label>
                     <div className="grid grid-cols-3 gap-4">
-                        <select
-                            name="birthDay"
-                            value={formData.birthDay}
-                            onChange={handleChange}
-                            required
-                            className="w-full px-4 py-3 rounded-lg border border-gray-400 bg-transparent font-manrope cursor-pointer focus:border-indigo-500 outline-none"
-                        >
+                        <select name="birthDay" value={formData.birthDay} onChange={handleChange} required className="w-full px-4 py-3 rounded-lg border border-gray-400 bg-transparent font-manrope cursor-pointer focus:border-indigo-500 outline-none">
                             <option value="">Day</option>
-                            {days.map(d => (
-                                <option key={d} value={d}>{d}</option>
-                            ))}
+                            {days.map(d => <option key={d} value={d}>{d}</option>)}
                         </select>
-
-                        <select
-                            name="birthMonth"
-                            value={formData.birthMonth}
-                            onChange={handleChange}
-                            required
-                            className="w-full px-4 py-3 rounded-lg border border-gray-400 bg-transparent font-manrope cursor-pointer focus:border-indigo-500 outline-none"
-                        >
+                        <select name="birthMonth" value={formData.birthMonth} onChange={handleChange} required className="w-full px-4 py-3 rounded-lg border border-gray-400 bg-transparent font-manrope cursor-pointer focus:border-indigo-500 outline-none">
                             <option value="">Month</option>
-                            {months.map((m, i) => (
-                                <option key={m} value={i + 1}>{m}</option>
-                            ))}
+                            {months.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
                         </select>
-
-                        <select
-                            name="birthYear"
-                            value={formData.birthYear}
-                            onChange={handleChange}
-                            required
-                            className="w-full px-4 py-3 rounded-lg border border-gray-400 bg-transparent cursor-pointer font-manrope focus:border-indigo-500 outline-none"
-                        >
+                        <select name="birthYear" value={formData.birthYear} onChange={handleChange} required className="w-full px-4 py-3 rounded-lg border border-gray-400 bg-transparent cursor-pointer font-manrope focus:border-indigo-500 outline-none">
                             <option value="">Year</option>
-                            {years.map(y => (
-                                <option key={y} value={y}>{y}</option>
-                            ))}
+                            {years.map(y => <option key={y} value={y}>{y}</option>)}
                         </select>
                     </div>
                 </div>
 
-                {/* Country / State / City */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
                     <div>
-                        <label className="block mb-2 text-gray-700 font-manrope font-medium text-sm">
-                            Current Country*
-                        </label>
-                        <select
-                            name="country"
-                            value={formData.country}
-                            onChange={handleChange}
-                            required
-                            className="w-full px-4 py-3 rounded-lg border border-gray-400 bg-transparent cursor-pointer"
-                        >
+                        <label className="block mb-2 text-gray-700 font-manrope font-medium text-sm">Current Country*</label>
+                        <select name="country" value={formData.country} onChange={handleChange} required className="w-full px-4 py-3 rounded-lg border border-gray-400 bg-transparent cursor-pointer">
                             <option value="">Select Country</option>
-                            {countries.map((c) => (
-                                <option key={c.isoCode} value={c.isoCode}>
-                                    {c.name}
-                                </option>
-                            ))}
+                            {countries.map((c) => <option key={c.isoCode} value={c.isoCode}>{c.name}</option>)}
                         </select>
                     </div>
-
                     {states.length > 0 && (
                         <div className="animate-fadeIn">
-                            <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">
-                                State*
-                            </label>
-                            <select
-                                name="state"
-                                value={formData.state}
-                                onChange={handleChange}
-                                required
-                                className="w-full px-4 py-3 rounded-lg border font-manrope border-gray-400 bg-transparent"
-                            >
+                            <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">State*</label>
+                            <select name="state" value={formData.state} onChange={handleChange} required className="w-full px-4 py-3 rounded-lg border font-manrope border-gray-400 bg-transparent">
                                 <option value="">Select State</option>
-                                {states.map((s) => (
-                                    <option key={s.isoCode} value={s.isoCode}>
-                                        {s.name}
-                                    </option>
-                                ))}
+                                {states.map((s) => <option key={s.isoCode} value={s.isoCode}>{s.name}</option>)}
                             </select>
                         </div>
                     )}
-
                     {cities.length > 0 && (
                         <div className="animate-fadeIn">
-                            <label className="block mb-2 text-gray-700 font-manrope font-medium text-sm">
-                                City*
-                            </label>
-                            <select
-                                name="city"
-                                value={formData.city}
-                                onChange={handleChange}
-                                required
-                                className="w-full px-4 py-3 rounded-lg border font-manrope border-gray-400 bg-transparent"
-                            >
+                            <label className="block mb-2 text-gray-700 font-manrope font-medium text-sm">City*</label>
+                            <select name="city" value={formData.city} onChange={handleChange} required className="w-full px-4 py-3 rounded-lg border font-manrope border-gray-400 bg-transparent">
                                 <option value="">Select City</option>
-                                {cities.map((ct) => (
-                                    <option key={ct.name} value={ct.name}>
-                                        {ct.name}
-                                    </option>
-                                ))}
+                                {cities.map((ct) => <option key={ct.name} value={ct.name}>{ct.name}</option>)}
                             </select>
                         </div>
                     )}
                 </div>
 
-                {/* Visa Type */}
                 <div className="mb-5">
-                    <label className="block mb-2 text-gray-700 font-manrope font-medium text-sm">
-                        What type of visa service are you seeking?*
-                    </label>
-                    <select
-                        name="visaType"
-                        value={formData.visaType}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-3 rounded-lg border font-manrope border-gray-400 bg-transparent cursor-pointer"
-                    >
+                    <label className="block mb-2 text-gray-700 font-manrope font-medium text-sm">What type of visa service are you seeking?*</label>
+                    <select name="visaType" value={formData.visaType} onChange={handleChange} required className="w-full px-4 py-3 rounded-lg border font-manrope border-gray-400 bg-transparent cursor-pointer">
                         <option value="">Select an Option</option>
                         <option value="student">Student Visa</option>
                         <option value="visitor">Visitor Visa</option>
@@ -543,16 +456,8 @@ export default function VisaForm() {
                 <div className="space-y-5">
                     {['student', 'visitor', 'dependent', 'work', 'studyPermit', 'coaching'].includes(formData.visaType) && (
                         <div className="animate-fadeIn">
-                            <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">
-                                Which country are you inquiring about?*
-                            </label>
-                            <select
-                                name="targetCountry"
-                                value={formData.targetCountry}
-                                onChange={handleChange}
-                                required
-                                className="w-full px-4 py-3 font-manrope rounded-lg border border-gray-400 bg-transparent cursor-pointer"
-                            >
+                            <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">Which country are you inquiring about?*</label>
+                            <select name="targetCountry" value={formData.targetCountry} onChange={handleChange} required className="w-full px-4 py-3 font-manrope rounded-lg border border-gray-400 bg-transparent cursor-pointer">
                                 <option value="">Select Target Country</option>
                                 <option value="germany">Germany</option>
                                 <option value="uk">United Kingdom</option>
@@ -566,16 +471,8 @@ export default function VisaForm() {
 
                     {formData.visaType === 'student' && (
                         <div className="animate-fadeIn">
-                            <label className="block mb-2 text-gray-700 font-medium font-manrope text-sm">
-                                Which course are you interested in?*
-                            </label>
-                            <select
-                                name="targetCourse"
-                                value={formData.targetCourse}
-                                onChange={handleChange}
-                                required
-                                className="w-full px-4 py-3 rounded-lg border mb-6 font-manrope border-gray-400 bg-transparent cursor-pointer"
-                            >
+                            <label className="block mb-2 text-gray-700 font-medium font-manrope text-sm">Which course are you interested in?*</label>
+                            <select name="targetCourse" value={formData.targetCourse} onChange={handleChange} required className="w-full px-4 py-3 rounded-lg border mb-6 font-manrope border-gray-400 bg-transparent cursor-pointer">
                                 <option value="">Select Degree Type</option>
                                 <option value="bachelor">Bachelor's</option>
                                 <option value="master">Master's</option>
