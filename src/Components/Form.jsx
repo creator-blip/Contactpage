@@ -106,9 +106,21 @@ export default function VisaForm() {
         return true
     }
 
-    const getUtmMedium = () => {
+    const getUtmTracking = () => {
         const params = new URLSearchParams(window.location.search)
-        return params.get('utm_medium') || 'direct'
+        const utmSource = params.get('utm_source') || ''
+        const utmCampaign = params.get('utm_campaign') || params.get('utm_campaingn') || ''
+        const utmMedium = params.get('utm_medium') || ''
+
+        // CRM "source" should get any one available tracking value from URL.
+        const source = utmSource || utmCampaign || utmMedium || 'direct'
+
+        return {
+            utm_source: utmSource,
+            utm_campaign: utmCampaign,
+            utm_medium: utmMedium || 'direct',
+            source
+        }
     }
 
     const getCountryNameByIso = (isoCode) => {
@@ -136,6 +148,7 @@ export default function VisaForm() {
 
     const sendOtpRequest = async () => {
         const { mobile_no_code, mobile_no } = getPhoneParts(formData.phone, phoneDialCode)
+        const utmTracking = getUtmTracking()
 
         const payload = {
             first_name: formData.firstName,
@@ -146,7 +159,10 @@ export default function VisaForm() {
             purpose: 'Study Abroad',
             country1: countryMap[formData.targetCountry] || '',
             coaching1: formData.visaType === 'coaching' ? 'IELTS' : '',
-            utm_medium: getUtmMedium(),
+            utm_medium: utmTracking.utm_medium,
+            utm_source: utmTracking.utm_source,
+            utm_campaign: utmTracking.utm_campaign,
+            source: utmTracking.source,
             birth_day: formData.birthDay,
             birth_month: formData.birthMonth,
             birth_year: formData.birthYear,
