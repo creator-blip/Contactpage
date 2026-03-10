@@ -13,7 +13,8 @@ const Home = () => {
   // Detect if we're on mobile/tablet view
   useEffect(() => {
     const handleResize = () => {
-      setIsMobileView(window.innerWidth < 1024);
+      const nextIsMobile = window.innerWidth < 1024;
+      setIsMobileView((prev) => (prev === nextIsMobile ? prev : nextIsMobile));
     };
     
     handleResize();
@@ -214,29 +215,6 @@ const Home = () => {
     }
   `;
 
-  const FormComponent = () => (
-    <div className="w-full bg-transparent rounded-3xl sm:m-6 md:p-8 lg:p-2 xl:p-4 2xl:p-2 animate-slideInRight">
-      <div className="ticker-wrapper mb-2 sm:mb-3 lg:mb-4">
-        <div className="ticker-content ">
-          {countries.concat(countries).map((country, idx) => (
-            <div key={`${country.code}-${idx}`} className="ticker-item">
-              <div className="w-10 h-10 rounded-full bg-transparent shadow-sm border border-black p-1 flex items-center justify-center overflow-hidden">
-                <img
-                  src={`https://flagcdn.com/w40/${country.code}.png`}
-                  srcSet={`https://flagcdn.com/w80/${country.code}.png 2x`}
-                  alt={`${country.name} flag`}
-                  className="w-full rounded-full h-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-              <span className="text-sm mt-1 text-slate-500 uppercase font-bold">{country.name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-      <Form />
-    </div>
-  );
 {/* desktop statcard */}
   const StatsGrid = () => (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -334,7 +312,7 @@ const Home = () => {
 
           {/* Mobile/Tablet Form - After benefits */}
           <div className="block lg:hidden opacity-0 animate-fadeIn animation-delay-500">
-            <FormComponent />
+            <FormPanel countries={countries} />
           </div>          
           <p className="text-lg xl:text-lg font-semibold p-2 tracking-normal font-manrope text-slate-700 leading-relaxed opacity-0 animate-fadeInUp animation-delay-300">
             Clear, honest advice to help you choose the right visa, avoid costly mistakes, and move forward with confidence.
@@ -472,7 +450,7 @@ const Home = () => {
 
         {/* Right Column: Form - Desktop Only */}
         <div className="lg:w-1/2 w-full hidden lg:block">
-          <FormComponent />
+          <FormPanel countries={countries} />
         </div>
       </div>
 
@@ -480,6 +458,30 @@ const Home = () => {
     </div>
   );
 };
+
+const FormPanel = ({ countries }) => (
+  <div className="w-full bg-transparent rounded-3xl sm:m-6 md:p-8 lg:p-2 xl:p-4 2xl:p-2 animate-slideInRight">
+    <div className="ticker-wrapper mb-2 sm:mb-3 lg:mb-4">
+      <div className="ticker-content ">
+        {countries.concat(countries).map((country, idx) => (
+          <div key={`${country.code}-${idx}`} className="ticker-item">
+            <div className="w-10 h-10 rounded-full bg-transparent shadow-sm border border-black p-1 flex items-center justify-center overflow-hidden">
+              <img
+                src={`https://flagcdn.com/w40/${country.code}.png`}
+                srcSet={`https://flagcdn.com/w80/${country.code}.png 2x`}
+                alt={`${country.name} flag`}
+                className="w-full rounded-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+            <span className="text-sm mt-1 text-slate-500 uppercase font-bold">{country.name}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+    <Form />
+  </div>
+);
 
 // Sub-components
 const StatCard = ({ value, label, color }) => {
