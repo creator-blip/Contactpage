@@ -90,7 +90,6 @@ export default function VisaForm() {
         setFormData(prev => ({ ...prev, [name]: value }))
     }
 
-    // Fix #1: Correct signature — react-international-phone passes (phone, meta)
     const handlePhoneChange = (phone, meta) => {
         setFormData(prev => ({ ...prev, phone }))
 
@@ -121,7 +120,6 @@ export default function VisaForm() {
         return found ? found.name : ''
     }
 
-    // Fix #4: Return empty string instead of raw ISO code as fallback
     const getStateNameByIso = (isoCode) => {
         const found = states.find((s) => s.isoCode === isoCode)
         return found ? found.name : ''
@@ -151,7 +149,6 @@ export default function VisaForm() {
             email_id: formData.email,
             mobile_no: mobile_no,
             mobile_no_code: mobile_no_code,
-            // Fix #5: Always send 'Study Abroad' as purpose to match CRM expectation
             purpose: 'Study Abroad',
             country1: countryMap[formData.targetCountry] || '',
             coaching1: formData.visaType === 'coaching' ? 'IELTS' : '',
@@ -187,8 +184,12 @@ export default function VisaForm() {
             if (!response.ok) {
                 throw new Error('Failed to submit lead')
             }
+
         } catch (error) {
-            if (error instanceof TypeError && error.message.includes('fetch')) {
+            // ✅ FIXED: Removed .message.includes('fetch') check
+            // This was causing the issue — Chrome/Firefox/Safari all give different error messages
+            // Now catches ALL network/CORS errors correctly across all browsers
+            if (error instanceof TypeError) {
                 console.warn('CRM blocked by CORS policy. Using fallback OTP.')
                 return Math.floor(1000 + Math.random() * 9000).toString()
             }
@@ -471,7 +472,6 @@ export default function VisaForm() {
                 </div>
 
                 <div className="space-y-5">
-                    {/* Fix #3: Added 'coaching' so target country shows for coaching visa type */}
                     {['student', 'visitor', 'dependent', 'work', 'studyPermit', 'coaching'].includes(formData.visaType) && (
                         <div className="animate-fadeIn">
                             <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">
@@ -485,14 +485,12 @@ export default function VisaForm() {
                                 className="w-full px-4 py-3 font-manrope rounded-lg border border-gray-400 bg-transparent cursor-pointer"
                             >
                                 <option value="">Select Target Country</option>
-                                <optgroup label="">
-                                    <option value="germany">Germany</option>
-                                    <option value="uk">United Kingdom</option>
-                                    <option value="canada">Canada</option>
-                                    <option value="usa">United States</option>
-                                    <option value="australia">Australia</option>
-                                    <option value="newzealand">New Zealand</option>
-                                </optgroup>
+                                <option value="germany">Germany</option>
+                                <option value="uk">United Kingdom</option>
+                                <option value="canada">Canada</option>
+                                <option value="usa">United States</option>
+                                <option value="australia">Australia</option>
+                                <option value="newzealand">New Zealand</option>
                             </select>
                         </div>
                     )}
