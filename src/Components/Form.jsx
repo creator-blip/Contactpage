@@ -4,7 +4,6 @@ import { PhoneInput } from 'react-international-phone'
 import 'react-international-phone/style.css'
 import Otp from './Otp'
 
-// Moved outside component to avoid recreation on every render
 const countryMap = {
     germany: '1',
     uk: '2',
@@ -92,11 +91,9 @@ export default function VisaForm() {
 
     const handlePhoneChange = (phone, meta) => {
         setFormData(prev => ({ ...prev, phone }))
-
         if (meta?.country?.dialCode) {
             setPhoneDialCode(`+${meta.country.dialCode}`)
         }
-
         if (phoneError) setPhoneError('')
     }
 
@@ -164,8 +161,6 @@ export default function VisaForm() {
             target_course: formData.targetCourse
         }
 
-        console.log('Sending payload:', payload)
-
         const body = new URLSearchParams(payload).toString()
         let result = ''
 
@@ -179,18 +174,13 @@ export default function VisaForm() {
             })
 
             result = await response.text()
-            console.log('CRM Response:', result)
 
             if (!response.ok) {
                 throw new Error('Failed to submit lead')
             }
 
         } catch (error) {
-            // ✅ FIXED: Removed .message.includes('fetch') check
-            // This was causing the issue — Chrome/Firefox/Safari all give different error messages
-            // Now catches ALL network/CORS errors correctly across all browsers
             if (error instanceof TypeError) {
-                console.warn('CRM blocked by CORS policy. Using fallback OTP.')
                 return Math.floor(1000 + Math.random() * 9000).toString()
             }
             throw error
@@ -207,7 +197,6 @@ export default function VisaForm() {
 
         if (!otpValue) {
             otpValue = Math.floor(1000 + Math.random() * 9000).toString()
-            console.log('Generated fallback OTP:', otpValue)
         }
 
         return otpValue
@@ -238,7 +227,6 @@ export default function VisaForm() {
             setSentOtp(otpValue)
             return true
         } catch (error) {
-            console.error('Resend OTP Error:', error)
             return false
         }
     }
