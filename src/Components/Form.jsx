@@ -202,6 +202,84 @@ export default function VisaForm() {
         return otpValue
     }
 
+    const verifyOtpRequest = async (enteredOtp) => {
+        const { mobile_no_code, mobile_no } = getPhoneParts(formData.phone, phoneDialCode)
+
+        const payload = {
+            mobile_no: mobile_no,
+            mobile_no_code: mobile_no_code,
+            otp: enteredOtp,
+            email_id: formData.email
+        }
+
+        const body = new URLSearchParams(payload).toString()
+
+        try {
+            const response = await fetch('https://crm.amratpal.com/landing-page/otp-check-api.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+                },
+                body
+            })
+
+            const result = await response.text()
+
+            if (!response.ok) {
+                return { success: false, message: 'OTP verification failed. Please try again.' }
+            }
+
+            try {
+                const parsed = JSON.parse(result)
+                const status = parsed?.status
+                const verified = parsed?.verified
+                const isValid = parsed?.is_valid
+                const message = parsed?.message || parsed?.msg || ''
+
+                const isSuccess = (
+                    status === true ||
+                    status === 1 ||
+                    status === '1' ||
+                    status === 'success' ||
+                    verified === true ||
+                    verified === 1 ||
+                    isValid === true ||
+                    isValid === 1
+                )
+
+                if (isSuccess) {
+                    return { success: true, message: '' }
+                }
+
+                return {
+                    success: false,
+                    message: message || 'Invalid OTP. Please try again.'
+                }
+            } catch {
+                const normalized = result.toLowerCase()
+                const looksSuccessful =
+                    normalized.includes('success') ||
+                    normalized.includes('verified') ||
+                    normalized.includes('valid')
+
+                return {
+                    success: looksSuccessful,
+                    message: looksSuccessful ? '' : 'Invalid OTP. Please try again.'
+                }
+            }
+        } catch (error) {
+            if (error instanceof TypeError) {
+                const fallbackSuccess = enteredOtp.trim() === sentOtp.trim()
+                return {
+                    success: fallbackSuccess,
+                    message: fallbackSuccess ? '' : 'Invalid OTP. Please try again.'
+                }
+            }
+
+            return { success: false, message: 'Unable to verify OTP right now.' }
+        }
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
 
@@ -239,6 +317,7 @@ export default function VisaForm() {
                 sentOtp={sentOtp}
                 onBack={() => setShowOtp(false)}
                 onResend={handleResendOtp}
+                onVerify={verifyOtpRequest}
             />
         )
     }

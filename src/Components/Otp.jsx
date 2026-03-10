@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Thankyou from './Thankyou';
 
-const Otp = ({ phone, formData, sentOtp, onBack, onResend }) => {
+const Otp = ({ phone, formData, sentOtp, onBack, onResend, onVerify }) => {
   const [otp, setOtp] = useState('');
   const [isVerified, setIsVerified] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState('');
   const [resendCountdown, setResendCountdown] = useState(30);
   const [isResending, setIsResending] = useState(false);
@@ -16,17 +17,34 @@ const Otp = ({ phone, formData, sentOtp, onBack, onResend }) => {
     }
   }, [resendCountdown]);
 
-  const handleVerify = (e) => {
+  const handleVerify = async (e) => {
     e.preventDefault();
     setError('');
-    
-    // Validate OTP
-    if (otp.trim() === sentOtp.trim()) {
-      console.log("OTP Verified Successfully");
-      setIsVerified(true);
-    } else {
-      setError('Invalid OTP. Please try again.');
-      console.log("OTP Verification Failed. Entered:", otp, "Expected:", sentOtp);
+
+    if (otp.trim().length !== 4) {
+      setError('Please enter a valid 4-digit OTP.');
+      return;
+    }
+
+    setIsVerifying(true);
+
+    try {
+      if (onVerify) {
+        const verificationResult = await onVerify(otp.trim());
+        if (verificationResult?.success) {
+          setIsVerified(true);
+        } else {
+          setError(verificationResult?.message || 'Invalid OTP. Please try again.');
+        }
+      } else if (otp.trim() === sentOtp.trim()) {
+        setIsVerified(true);
+      } else {
+        setError('Invalid OTP. Please try again.');
+      }
+    } catch {
+      setError('Unable to verify OTP right now. Please try again.');
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -130,9 +148,10 @@ const Otp = ({ phone, formData, sentOtp, onBack, onResend }) => {
 
           <button
             type="submit"
+            disabled={isVerifying}
             className="w-full py-4 opacity-80 bg-gradient-to-tl from-[#1D318A] to-[#428699] text-white font-semibold rounded-lg text-base transition-all duration-200 font-manrope transform hover:-translate-y-0.5 hover:shadow-lg"
           >
-            Verify OTP
+            {isVerifying ? 'Verifying...' : 'Verify OTP'}
           </button>
 
           {onBack && (
