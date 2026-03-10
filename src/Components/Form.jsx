@@ -109,16 +109,10 @@ export default function VisaForm() {
     const getUtmTracking = () => {
         const params = new URLSearchParams(window.location.search)
         const utmSource = params.get('utm_source') || ''
-        const utmCampaign = params.get('utm_campaign') || params.get('utm_campaingn') || ''
-        const utmMedium = params.get('utm_medium') || ''
-
-        // CRM "source" should get any one available tracking value from URL.
-        const source = utmSource || utmCampaign || utmMedium || 'direct'
+        const source = utmSource || 'direct'
 
         return {
             utm_source: utmSource,
-            utm_campaign: utmCampaign,
-            utm_medium: utmMedium || 'direct',
             source
         }
     }
@@ -159,9 +153,7 @@ export default function VisaForm() {
             purpose: 'Study Abroad',
             country1: countryMap[formData.targetCountry] || '',
             coaching1: formData.visaType === 'coaching' ? 'IELTS' : '',
-            utm_medium: utmTracking.utm_medium,
             utm_source: utmTracking.utm_source,
-            utm_campaign: utmTracking.utm_campaign,
             source: utmTracking.source,
             birth_day: formData.birthDay,
             birth_month: formData.birthMonth,
