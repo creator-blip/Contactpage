@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Thankyou from './Thankyou';
 
-const Otp = ({ phone, formData, sentOtp, onBack, onResend, onVerify }) => {
+const Otp = ({ phone, formData, sentOtp, masterId, onBack, onResend, onVerify }) => {
   const [otp, setOtp] = useState('');
   const [isVerified, setIsVerified] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -30,8 +30,8 @@ const Otp = ({ phone, formData, sentOtp, onBack, onResend, onVerify }) => {
 
     try {
       if (onVerify) {
-        // ✅ OTP BUG FIX: Pass sentOtp as second argument to avoid stale closure
-        const verificationResult = await onVerify(otp.trim(), sentOtp);
+        // ✅ Pass sentOtp and masterId to verifyOtpRequest
+        const verificationResult = await onVerify(otp.trim(), sentOtp, masterId);
         if (verificationResult?.success) {
           setIsVerified(true);
         } else {
@@ -72,9 +72,7 @@ const Otp = ({ phone, formData, sentOtp, onBack, onResend, onVerify }) => {
 
   const handleBackHome = () => {
     setIsVerified(false);
-    if (onBack) {
-      onBack();
-    }
+    if (onBack) onBack();
   };
 
   if (isVerified) {
@@ -85,7 +83,6 @@ const Otp = ({ phone, formData, sentOtp, onBack, onResend, onVerify }) => {
     <div className="bg-transparent p-10 rounded-2xl max-w-5xl mx-auto my-5 animate-fadeIn">
       <div className="max-w-md mx-auto">
 
-        {/* Header Section */}
         <div className="space-y-3 mb-8">
           <h2 className="text-2xl font-manrope font-semibold text-gray-800 text-left">
             Enter the OTP Received on WhatsApp
@@ -100,7 +97,6 @@ const Otp = ({ phone, formData, sentOtp, onBack, onResend, onVerify }) => {
           </p>
         </div>
 
-        {/* Form Section */}
         <form onSubmit={handleVerify} className="space-y-6">
           <div className="relative group">
             <input
@@ -168,7 +164,6 @@ const Otp = ({ phone, formData, sentOtp, onBack, onResend, onVerify }) => {
         </form>
       </div>
 
-      {/* ✅ FIX: Replaced <style jsx> with plain <style> — works in all React setups */}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: scale(0.95); }

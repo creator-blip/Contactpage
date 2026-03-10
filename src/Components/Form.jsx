@@ -34,6 +34,7 @@ export default function VisaForm() {
     const [showOtp, setShowOtp] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [sentOtp, setSentOtp] = useState('')
+    const [masterId, setMasterId] = useState('') // ✅ Store master_id from CRM response
     const [phoneError, setPhoneError] = useState('')
     const [phoneDialCode, setPhoneDialCode] = useState('+91')
 
@@ -76,7 +77,6 @@ export default function VisaForm() {
 
     const handleChange = (e) => {
         const { name, value } = e.target
-
         if (name === 'country') {
             setFormData(prev => ({ ...prev, country: value, state: '', city: '' }))
             return
@@ -85,7 +85,6 @@ export default function VisaForm() {
             setFormData(prev => ({ ...prev, state: value, city: '' }))
             return
         }
-
         setFormData(prev => ({ ...prev, [name]: value }))
     }
 
@@ -125,12 +124,10 @@ export default function VisaForm() {
     const getPhoneParts = (fullPhone, dialCode) => {
         const digitsOnly = fullPhone.replace(/\D/g, '')
         const dialCodeDigits = (dialCode || '+91').replace(/\D/g, '')
-
         let mobileNo = digitsOnly
         if (dialCodeDigits && digitsOnly.startsWith(dialCodeDigits)) {
             mobileNo = digitsOnly.slice(dialCodeDigits.length)
         }
-
         return {
             mobile_no_code: dialCode || '+91',
             mobile_no: mobileNo
@@ -167,9 +164,7 @@ export default function VisaForm() {
         try {
             const response = await fetch('https://crm.amratpal.com/landing-page/insert-lead-api.php', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-                },
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
                 body
             })
 
@@ -178,24 +173,20 @@ export default function VisaForm() {
             if (!response.ok) {
                 throw new Error('Failed to submit lead')
             }
-
         } catch (error) {
             if (error instanceof TypeError) {
-                return Math.floor(1000 + Math.random() * 9000).toString()
+                return { otp: Math.floor(1000 + Math.random() * 9000).toString(), masterId: '' }
             }
             throw error
         }
 
-        // ✅ FIX 1: CRM returns OTP inside data.otp not directly in jsonResult.otp
+        // ✅ Extract both OTP and master_id from CRM response
         let otpValue = ''
+        let masterIdValue = ''
         try {
             const jsonResult = JSON.parse(result)
-            otpValue =
-                jsonResult?.data?.otp ||   // ← CRM actual response structure
-                jsonResult?.otp ||
-                jsonResult?.OTP ||
-                jsonResult?.code ||
-                ''
+            otpValue = jsonResult?.data?.otp || jsonResult?.otp || jsonResult?.OTP || jsonResult?.code || ''
+            masterIdValue = jsonResult?.data?.lead_master_id || jsonResult?.lead_master_id || jsonResult?.master_id || ''
         } catch {
             const otpMatch = result.match(/\b\d{4}\b/)
             otpValue = otpMatch ? otpMatch[0] : ''
@@ -205,19 +196,19 @@ export default function VisaForm() {
             otpValue = Math.floor(1000 + Math.random() * 9000).toString()
         }
 
-        return otpValue
+        return { otp: otpValue, masterId: masterIdValue }
     }
 
-    const verifyOtpRequest = async (enteredOtp, currentSentOtp) => {
+    const verifyOtpRequest = async (enteredOtp, currentSentOtp, currentMasterId) => {
         const { mobile_no_code, mobile_no } = getPhoneParts(formData.phone, phoneDialCode)
 
-        // ✅ FIX 2: Added 'name' field — otp-check-api.php requires it (was causing UNPROCESSABLE_ENTITY)
+        // ✅ FIX: Send master_id which otp-check-api.php requires
         const payload = {
+            master_id: currentMasterId,
+            otp: enteredOtp,
             mobile_no: mobile_no,
             mobile_no_code: mobile_no_code,
-            otp: enteredOtp,
-            email_id: formData.email,
-            name: `${formData.firstName} ${formData.lastName}`.trim()
+            email_id: formData.email
         }
 
         const body = new URLSearchParams(payload).toString()
@@ -225,9 +216,7 @@ export default function VisaForm() {
         try {
             const response = await fetch('https://crm.amratpal.com/landing-page/otp-check-api.php', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-                },
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
                 body
             })
 
@@ -259,10 +248,7 @@ export default function VisaForm() {
                     return { success: true, message: '' }
                 }
 
-                return {
-                    success: false,
-                    message: message || 'Invalid OTP. Please try again.'
-                }
+                return { success: false, message: message || 'Invalid OTP. Please try again.' }
             } catch {
                 const normalized = result.toLowerCase()
                 const looksSuccessful =
@@ -283,21 +269,19 @@ export default function VisaForm() {
                     message: fallbackSuccess ? '' : 'Invalid OTP. Please try again.'
                 }
             }
-
             return { success: false, message: 'Unable to verify OTP right now.' }
         }
     }
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-
         if (!validatePhone()) return
-
         setIsSubmitting(true)
 
         try {
-            const otpValue = await sendOtpRequest()
-            setSentOtp(otpValue)
+            const { otp, masterId: newMasterId } = await sendOtpRequest()
+            setSentOtp(otp)
+            setMasterId(newMasterId) // ✅ Save master_id for OTP verification
             setShowOtp(true)
         } catch (error) {
             console.error('Submission Error:', error)
@@ -309,8 +293,9 @@ export default function VisaForm() {
 
     const handleResendOtp = async () => {
         try {
-            const otpValue = await sendOtpRequest()
-            setSentOtp(otpValue)
+            const { otp, masterId: newMasterId } = await sendOtpRequest()
+            setSentOtp(otp)
+            setMasterId(newMasterId)
             return true
         } catch (error) {
             return false
@@ -323,6 +308,7 @@ export default function VisaForm() {
                 phone={formData.phone}
                 formData={formData}
                 sentOtp={sentOtp}
+                masterId={masterId} // ✅ Pass master_id to Otp component
                 onBack={() => setShowOtp(false)}
                 onResend={handleResendOtp}
                 onVerify={verifyOtpRequest}
@@ -337,58 +323,26 @@ export default function VisaForm() {
             </h3>
 
             <form onSubmit={handleSubmit}>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                     <div>
                         <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">First Name*</label>
-                        <input
-                            type="text"
-                            name="firstName"
-                            value={formData.firstName}
-                            onChange={handleChange}
-                            placeholder="Enter Your First Name"
-                            required
-                            className="w-full px-4 py-3 bg-transparent rounded-lg border border-gray-400 focus:outline-none focus:border-indigo-500 transition-colors"
-                        />
+                        <input type="text" name="firstName" value={formData.firstName} onChange={handleChange} placeholder="Enter Your First Name" required className="w-full px-4 py-3 bg-transparent rounded-lg border border-gray-400 focus:outline-none focus:border-indigo-500 transition-colors" />
                     </div>
                     <div>
                         <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">Last Name*</label>
-                        <input
-                            type="text"
-                            name="lastName"
-                            value={formData.lastName}
-                            onChange={handleChange}
-                            placeholder="Enter Your Last Name"
-                            required
-                            className="w-full px-4 py-3 bg-transparent rounded-lg border border-gray-400 focus:outline-none focus:border-indigo-500 transition-colors"
-                        />
+                        <input type="text" name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Enter Your Last Name" required className="w-full px-4 py-3 bg-transparent rounded-lg border border-gray-400 focus:outline-none focus:border-indigo-500 transition-colors" />
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                     <div>
                         <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">Email*</label>
-                        <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            placeholder="Enter Your Email"
-                            required
-                            className="w-full px-4 py-3 bg-transparent rounded-lg border border-gray-400 focus:outline-none focus:border-indigo-500 transition-colors"
-                        />
+                        <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Enter Your Email" required className="w-full px-4 py-3 bg-transparent rounded-lg border border-gray-400 focus:outline-none focus:border-indigo-500 transition-colors" />
                     </div>
                     <div>
                         <label className="block mb-2 font-manrope text-gray-700 font-medium text-sm">WhatsApp Number*</label>
                         <div className={`flex w-full px-4 py-1.5 bg-transparent rounded-lg border transition-colors ${phoneError ? 'border-red-500' : 'border-gray-400 focus-within:border-indigo-500'}`}>
-                            <PhoneInput
-                                defaultCountry="in"
-                                value={formData.phone}
-                                onChange={handlePhoneChange}
-                                className="phone-input-custom w-full"
-                                inputClassName="!border-none !w-full !text-base !bg-transparent focus:!ring-0"
-                                countrySelectorStyleProps={{ buttonClassName: '!border-none !bg-transparent' }}
-                            />
+                            <PhoneInput defaultCountry="in" value={formData.phone} onChange={handlePhoneChange} className="phone-input-custom w-full" inputClassName="!border-none !w-full !text-base !bg-transparent focus:!ring-0" countrySelectorStyleProps={{ buttonClassName: '!border-none !bg-transparent' }} />
                         </div>
                         {phoneError && <p className="text-red-500 text-xs mt-1">{phoneError}</p>}
                     </div>
@@ -468,7 +422,6 @@ export default function VisaForm() {
                             </select>
                         </div>
                     )}
-
                     {formData.visaType === 'student' && (
                         <div className="animate-fadeIn">
                             <label className="block mb-2 text-gray-700 font-medium font-manrope text-sm">Which course are you interested in?*</label>
@@ -481,26 +434,15 @@ export default function VisaForm() {
                     )}
                 </div>
 
-                <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full py-4 bg-gradient-to-tl from-[#1D318A] to-[#428699] hover:from-[#4e5da1] hover:to-[#72a5b3] text-white opacity-80 font-semibold rounded-lg text-base transition-all duration-200 font-manrope transform hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-gradient-to-tl from-[#1D318A] to-[#428699] hover:from-[#4e5da1] hover:to-[#72a5b3] text-white opacity-80 font-semibold rounded-lg text-base transition-all duration-200 font-manrope transform hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
                     {isSubmitting ? 'Submitting...' : 'Continue'}
                 </button>
             </form>
 
             <style>{`
-                .react-international-phone-input-container {
-                    border: none !important;
-                }
-                @keyframes fadeIn {
-                    from { opacity: 0; transform: scale(0.95); }
-                    to { opacity: 1; transform: scale(1); }
-                }
-                .animate-fadeIn {
-                    animation: fadeIn 0.3s ease-out forwards;
-                }
+                .react-international-phone-input-container { border: none !important; }
+                @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+                .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
             `}</style>
         </div>
     )
