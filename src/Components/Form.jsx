@@ -108,12 +108,10 @@ export default function VisaForm() {
 
     const getUtmTracking = () => {
         const params = new URLSearchParams(window.location.search)
-        const utmSource = params.get('utm_source') || ''
-        const source = utmSource || 'direct'
+        const utmMedium = params.get('utm_medium') || ''
 
         return {
-            utm_source: utmSource,
-            source
+            utm_medium: utmMedium || 'direct'
         }
     }
 
@@ -153,8 +151,7 @@ export default function VisaForm() {
             purpose: 'Study Abroad',
             country1: countryMap[formData.targetCountry] || '',
             coaching1: formData.visaType === 'coaching' ? 'IELTS' : '',
-            utm_source: utmTracking.utm_source,
-            source: utmTracking.source,
+            utm_medium: utmTracking.utm_medium,
             birth_day: formData.birthDay,
             birth_month: formData.birthMonth,
             birth_year: formData.birthYear,
