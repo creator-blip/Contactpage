@@ -29,6 +29,7 @@ const months = [
 ]
 const currentYear = new Date().getFullYear()
 const years = Array.from({ length: 100 }, (_, i) => currentYear - i)
+const FORM_STATE_STORAGE_KEY = 'contactpage-form-state-v1'
 
 export default function VisaForm() {
     const [showOtp, setShowOtp] = useState(false)
@@ -57,6 +58,49 @@ export default function VisaForm() {
     const [countries, setCountries] = useState([])
     const [states, setStates] = useState([])
     const [cities, setCities] = useState([])
+
+    useEffect(() => {
+        try {
+            const raw = sessionStorage.getItem(FORM_STATE_STORAGE_KEY)
+            if (!raw) return
+
+            const saved = JSON.parse(raw)
+
+            if (saved?.formData) {
+                setFormData((prev) => ({ ...prev, ...saved.formData }))
+            }
+            if (typeof saved?.showOtp === 'boolean') {
+                setShowOtp(saved.showOtp)
+            }
+            if (typeof saved?.sentOtp === 'string') {
+                setSentOtp(saved.sentOtp)
+            }
+            if (typeof saved?.masterId === 'string') {
+                setMasterId(saved.masterId)
+            }
+            if (typeof saved?.phoneDialCode === 'string') {
+                setPhoneDialCode(saved.phoneDialCode)
+            }
+        } catch {
+            // Ignore invalid saved state.
+        }
+    }, [])
+
+    useEffect(() => {
+        const stateToSave = {
+            formData,
+            showOtp,
+            sentOtp,
+            masterId,
+            phoneDialCode
+        }
+
+        try {
+            sessionStorage.setItem(FORM_STATE_STORAGE_KEY, JSON.stringify(stateToSave))
+        } catch {
+            // Ignore storage write errors.
+        }
+    }, [formData, showOtp, sentOtp, masterId, phoneDialCode])
 
     useEffect(() => {
         setCountries(Country.getAllCountries())

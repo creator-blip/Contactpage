@@ -311,9 +311,11 @@ const Home = () => {
           </header>
 
           {/* Mobile/Tablet Form - After benefits */}
-          <div className="block lg:hidden opacity-0 animate-fadeIn animation-delay-500">
-            <FormPanel countries={countries} />
-          </div>          
+          {isMobileView && (
+            <div className="opacity-0 animate-fadeIn animation-delay-500">
+              <FormPanel countries={countries} />
+            </div>
+          )}
           <p className="text-lg xl:text-lg font-semibold p-2 tracking-normal font-manrope text-slate-700 leading-relaxed opacity-0 animate-fadeInUp animation-delay-300">
             Clear, honest advice to help you choose the right visa, avoid costly mistakes, and move forward with confidence.
           </p>
@@ -449,9 +451,11 @@ const Home = () => {
         </div>
 
         {/* Right Column: Form - Desktop Only */}
-        <div className="lg:w-1/2 w-full hidden lg:block">
-          <FormPanel countries={countries} />
-        </div>
+        {!isMobileView && (
+          <div className="lg:w-1/2 w-full">
+            <FormPanel countries={countries} />
+          </div>
+        )}
       </div>
 
 
